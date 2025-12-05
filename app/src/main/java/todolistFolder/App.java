@@ -1,3 +1,4 @@
+// Daniel Pelley and David Pelley
 package todolistFolder;
 
 import java.awt.BorderLayout;
@@ -46,9 +47,9 @@ public class App extends JFrame {
         setSize(700, 450);
         setLayout(new BorderLayout());
 
-        initComponents();
-        initLayout();
-        initListeners();
+        createComponents();
+        buildLayout();
+        wireEvents();
 
         refreshTaskList();
 
@@ -56,8 +57,8 @@ public class App extends JFrame {
         setVisible(true);
     }
 
-    private void initComponents() {
-        // List and model
+    private void createComponents() {
+        // Task list
         taskListModel = new DefaultListModel<>();
         taskList = new JList<>(taskListModel);
         taskList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -72,22 +73,20 @@ public class App extends JFrame {
         addButton = new JButton("Add Task");
         updateButton = new JButton("Update Task");
         deleteButton = new JButton("Delete Task");
-        toggleCompleteButton = new JButton("Mark Task Complete / Incomplete");
-        showAllButton = new JButton("Show All Tasks");
-        showCompletedButton = new JButton("Show Completed Tasks");
+        toggleCompleteButton = new JButton("Toggle Complete");
+        showAllButton = new JButton("Show All");
+        showCompletedButton = new JButton("Show Completed");
     }
 
-    private void initLayout() {
-        // Left: task list
+    private void buildLayout() {
+        // Left side: list of tasks
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.add(new JLabel("Tasks"), BorderLayout.NORTH);
         leftPanel.add(new JScrollPane(taskList), BorderLayout.CENTER);
+        leftPanel.setPreferredSize(new Dimension(250, 0));
 
-         leftPanel.setPreferredSize(new Dimension(250, 0));
-
-        // Right: details and buttons
-        JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new BorderLayout());
+        // Right side: editor + buttons
+        JPanel rightPanel = new JPanel(new BorderLayout());
 
         // Top: fields
         JPanel fieldsPanel = new JPanel(new BorderLayout());
@@ -103,14 +102,14 @@ public class App extends JFrame {
         fieldsPanel.add(titlePanel, BorderLayout.NORTH);
         fieldsPanel.add(descPanel, BorderLayout.CENTER);
 
-        // Middle: buttons
+        // Middle: main action buttons
         JPanel buttonsPanel = new JPanel(new GridLayout(0, 1, 5, 5));
         buttonsPanel.add(addButton);
         buttonsPanel.add(updateButton);
         buttonsPanel.add(deleteButton);
         buttonsPanel.add(toggleCompleteButton);
 
-        // Bottom: buttons
+        // Bottom: filter buttons
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         filterPanel.add(showAllButton);
         filterPanel.add(showCompletedButton);
@@ -123,11 +122,11 @@ public class App extends JFrame {
         add(rightPanel, BorderLayout.CENTER);
     }
 
-    private void initListeners() {
-        addButton.addActionListener(e -> onAddTask());
-        updateButton.addActionListener(e -> onUpdateTask());
-        deleteButton.addActionListener(e -> onDeleteTask());
-        toggleCompleteButton.addActionListener(e -> onToggleCompleted());
+    private void wireEvents() {
+        addButton.addActionListener(e -> handleAddTask());
+        updateButton.addActionListener(e -> handleUpdateTask());
+        deleteButton.addActionListener(e -> handleDeleteTask());
+        toggleCompleteButton.addActionListener(e -> handleToggleCompleted());
         showAllButton.addActionListener(e -> {
             showingCompletedOnly = false;
             refreshTaskList();
@@ -152,23 +151,20 @@ public class App extends JFrame {
 
     private void refreshTaskList() {
         taskListModel.clear();
-        List<Task> source = showingCompletedOnly
-                ? taskManager.getCompletedTasks()
-                : taskManager.getAllTasks();
-        for (Task t : source) {
-            taskListModel.addElement(t);
+
+        List<Task> tasks = showingCompletedOnly ? taskManager.getCompletedTasks() : taskManager.getAllTasks();
+
+        for (Task task : tasks) {
+            taskListModel.addElement(task);
         }
     }
 
-    private void onAddTask() {
+    private void handleAddTask() {
         String title = titleField.getText().trim();
         String description = descriptionArea.getText().trim();
 
         if (title.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Cannot have an empty title.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please enter a title.", "Missing Title", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -180,13 +176,10 @@ public class App extends JFrame {
         taskList.setSelectedValue(t, true);
     }
 
-    private void onUpdateTask() {
+    private void handleUpdateTask() {
         Task selected = taskList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Select a task to update.",
-                    "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pick a task to update first.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -194,10 +187,7 @@ public class App extends JFrame {
         String newDescription = descriptionArea.getText().trim();
 
         if (newTitle.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Title cannot be empty.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please enter a title.", "Missing Title", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -206,20 +196,14 @@ public class App extends JFrame {
         taskList.setSelectedValue(selected, true);
     }
 
-    private void onDeleteTask() {
+    private void handleDeleteTask() {
         Task selected = taskList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Select a task to delete.",
-                    "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pick a task to delete first.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this task?",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Delete this task?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
             taskManager.deleteTask(selected);
@@ -229,13 +213,10 @@ public class App extends JFrame {
         }
     }
 
-    private void onToggleCompleted() {
+    private void handleToggleCompleted() {
         Task selected = taskList.getSelectedValue();
         if (selected == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Select a task to mark complete/incomplete.",
-                    "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pick a task to toggle first.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
 

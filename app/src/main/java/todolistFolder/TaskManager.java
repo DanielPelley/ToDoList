@@ -1,3 +1,4 @@
+// Daniel Pelley and David Pelley
 package todolistFolder;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -58,16 +59,16 @@ public class TaskManager {
 
     private void loadFromFile() {
         if (!Files.exists(filePath)) {
-            return; // nothing to load yet
+            return; 
         }
         try (BufferedReader reader = Files.newBufferedReader(filePath)) {
             String line;
             int maxId = 0;
             while ((line = reader.readLine()) != null) {
-                // Simple format: id|title|description|completed
+                //format: id|title|description|completed
                 String[] parts = line.split("\\|", -1);
                 if (parts.length != 4) {
-                    continue; // skip bad lines
+                    continue; 
                 }
                 int id = Integer.parseInt(parts[0]);
                 String title = parts[1];
@@ -90,10 +91,7 @@ public class TaskManager {
         try (BufferedWriter writer = Files.newBufferedWriter(filePath)) {
             for (Task t : tasks) {
                 // id|title|description|completed
-                writer.write(t.getId()
-                        + "|" + safe(t.getTitle())
-                        + "|" + safe(t.getDescription())
-                        + "|" + t.isCompleted());
+                writer.write(t.getId() + "|" + safe(t.getTitle()) + "|" + safe(t.getDescription()) + "|" + t.isCompleted());
                 writer.newLine();
             }
         } catch (IOException e) {
